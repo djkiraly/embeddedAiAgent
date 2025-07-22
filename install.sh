@@ -168,31 +168,61 @@ setup_app_directory() {
     TEMP_DIR=$(mktemp -d)
     print_status "Using temporary directory: ${TEMP_DIR}"
     
-    if cd ${TEMP_DIR} && git clone https://github.com/djkiraly/embeddedAiAgent.git .; then
-        print_status "Repository cloned successfully to temp directory"
+    # Try cloning into a subdirectory first, then move contents
+    # First try the master branch explicitly
+    if cd ${TEMP_DIR} && git clone --branch master --single-branch https://github.com/djkiraly/embeddedAiAgent.git repo 2>/dev/null; then
+        print_status "Successfully cloned master branch"
+    elif cd ${TEMP_DIR} && git clone --branch main --single-branch https://github.com/djkiraly/embeddedAiAgent.git repo 2>/dev/null; then
+        print_status "Successfully cloned main branch (master failed)"
+    elif cd ${TEMP_DIR} && git clone https://github.com/djkiraly/embeddedAiAgent.git repo; then
+        print_status "Successfully cloned default branch (both master and main failed)"
+    else
+        print_error "All git clone attempts failed"
+        rm -rf ${TEMP_DIR}
+        return 1
+    fi
+    
+        # Move into the cloned directory
+        cd repo || {
+            print_error "Failed to enter cloned repository directory"
+            rm -rf ${TEMP_DIR}
+            return 1
+        }
         
-        # List files in temp directory for debugging
+        # Check git status and branch
+        print_status "Git status and branch information:"
+        git status || echo "Git status failed"
+        git branch -a || echo "Git branch failed"
+        git ls-files | head -20 || echo "Git ls-files failed"
+        
+        # List files in temp directory for debugging (including hidden)
         print_status "Files in temp directory:"
         ls -la || echo "Failed to list temp directory contents"
+        
+        # Check if files exist but are in a subdirectory
+        print_status "Looking for application files:"
+        find . -name "package.json" -type f 2>/dev/null || echo "No package.json found anywhere"
+        find . -name "backend" -type d 2>/dev/null || echo "No backend directory found anywhere"
+        find . -name "frontend" -type d 2>/dev/null || echo "No frontend directory found anywhere"
         
         print_status "Copying cloned files to ${APP_DIR}..."
         
         # Clear the destination directory first to avoid conflicts
         sudo rm -rf ${APP_DIR}/* 2>/dev/null || true
         
-        # Method 1: Try cp with verbose output
+        # Method 1: Try cp with verbose output (from repo subdirectory)
         print_status "Attempting copy method 1: cp -rv"
-        if sudo cp -rv ${TEMP_DIR}/* ${APP_DIR}/ 2>&1; then
+        if sudo cp -rv * ${APP_DIR}/ 2>&1; then
             print_status "Method 1 (cp) succeeded"
             COPY_SUCCESS=true
         else
             print_warning "Method 1 (cp) failed, trying method 2..."
             COPY_SUCCESS=false
             
-            # Method 2: Try rsync
+            # Method 2: Try rsync  
             print_status "Attempting copy method 2: rsync"
             if command -v rsync >/dev/null 2>&1; then
-                if sudo rsync -av ${TEMP_DIR}/ ${APP_DIR}/ 2>&1; then
+                if sudo rsync -av ./ ${APP_DIR}/ 2>&1; then
                     print_status "Method 2 (rsync) succeeded"
                     COPY_SUCCESS=true
                 else
@@ -205,7 +235,7 @@ setup_app_directory() {
             # Method 3: Manual copy with tar
             if [[ "$COPY_SUCCESS" != "true" ]]; then
                 print_status "Attempting copy method 3: tar"
-                if (cd ${TEMP_DIR} && sudo tar cf - .) | (cd ${APP_DIR} && sudo tar xf -); then
+                if sudo tar cf - . | (cd ${APP_DIR} && sudo tar xf -); then
                     print_status "Method 3 (tar) succeeded"
                     COPY_SUCCESS=true
                 else
