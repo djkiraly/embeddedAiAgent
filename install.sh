@@ -143,25 +143,46 @@ setup_app_directory() {
     sudo mkdir -p ${APP_DIR}/logs
     sudo mkdir -p ${APP_DIR}/data
     
-    # Clone the repository if we don't have the application files
-    if [[ ! -f "package.json" ]] || [[ ! -d "backend" ]] || [[ ! -d "frontend" ]]; then
-        print_status "Cloning application from repository..."
-        TEMP_DIR=$(mktemp -d)
-        if cd ${TEMP_DIR} && git clone https://github.com/djkiraly/embeddedAiAgent.git .; then
-            sudo cp -r . ${APP_DIR}/
-            cd - > /dev/null
-            rm -rf ${TEMP_DIR}
-            print_success "Repository cloned successfully"
+    # Debug: Check what files exist in current directory
+    print_status "Checking current directory contents..."
+    if [[ -f "package.json" ]]; then
+        print_status "Found package.json in current directory"
+    else
+        print_status "No package.json in current directory"
+    fi
+    
+    if [[ -d "backend" ]]; then
+        print_status "Found backend directory"
+    else
+        print_status "No backend directory found"
+    fi
+    
+    if [[ -d "frontend" ]]; then
+        print_status "Found frontend directory"
+    else
+        print_status "No frontend directory found"
+    fi
+    
+    # Always clone the repository to ensure we have all files
+    print_status "Cloning application from repository..."
+    TEMP_DIR=$(mktemp -d)
+    if cd ${TEMP_DIR} && git clone https://github.com/djkiraly/embeddedAiAgent.git .; then
+        print_status "Copying cloned files to ${APP_DIR}..."
+        sudo cp -r . ${APP_DIR}/
+        cd - > /dev/null
+        rm -rf ${TEMP_DIR}
+        
+        # Verify files were copied
+        if [[ -f "${APP_DIR}/package.json" ]]; then
+            print_success "Repository cloned and files copied successfully"
         else
-            print_error "Failed to clone repository"
-            rm -rf ${TEMP_DIR}
+            print_error "Files were not copied correctly"
             return 1
         fi
     else
-        # Copy application files from current directory
-        print_status "Copying application files..."
-        sudo cp -r . ${APP_DIR}/
-        print_success "Application files copied"
+        print_error "Failed to clone repository"
+        rm -rf ${TEMP_DIR}
+        return 1
     fi
     
     # Set ownership
