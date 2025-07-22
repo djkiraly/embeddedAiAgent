@@ -182,12 +182,12 @@ setup_app_directory() {
         return 1
     fi
     
-        # Move into the cloned directory
-        cd repo || {
-            print_error "Failed to enter cloned repository directory"
-            rm -rf ${TEMP_DIR}
-            return 1
-        }
+    # Move into the cloned directory
+    cd repo || {
+        print_error "Failed to enter cloned repository directory"
+        rm -rf ${TEMP_DIR}
+        return 1
+    }
         
         # Check git status and branch
         print_status "Git status and branch information:"
@@ -281,13 +281,10 @@ setup_app_directory() {
             print_error "Critical files/directories missing - copy failed"
             return 1
         fi
-    else
-        print_error "Failed to clone repository"
-        cd - > /dev/null 2>/dev/null || true
+        
+        cd - > /dev/null
         rm -rf ${TEMP_DIR}
-        return 1
-    fi
-    
+        
     # Set ownership
     sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${APP_DIR}
     
