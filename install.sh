@@ -173,22 +173,48 @@ setup_app_directory() {
         
         # List files in temp directory for debugging
         print_status "Files in temp directory:"
-        ls -la
+        ls -la || echo "Failed to list temp directory contents"
         
         print_status "Copying cloned files to ${APP_DIR}..."
         
-        # Use more explicit copy with error handling
-        if sudo cp -r ${TEMP_DIR}/* ${APP_DIR}/ 2>/dev/null; then
-            print_status "Files copied using cp -r ${TEMP_DIR}/* ${APP_DIR}/"
+        # Clear the destination directory first to avoid conflicts
+        sudo rm -rf ${APP_DIR}/* 2>/dev/null || true
+        
+        # Method 1: Try cp with verbose output
+        print_status "Attempting copy method 1: cp -rv"
+        if sudo cp -rv ${TEMP_DIR}/* ${APP_DIR}/ 2>&1; then
+            print_status "Method 1 (cp) succeeded"
+            COPY_SUCCESS=true
         else
-            print_warning "Standard copy failed, trying alternative method..."
-            # Try alternative copy method
-            sudo rsync -av ${TEMP_DIR}/ ${APP_DIR}/ || {
-                print_error "Both cp and rsync failed to copy files"
-                cd - > /dev/null
-                rm -rf ${TEMP_DIR}
-                return 1
-            }
+            print_warning "Method 1 (cp) failed, trying method 2..."
+            COPY_SUCCESS=false
+            
+            # Method 2: Try rsync
+            print_status "Attempting copy method 2: rsync"
+            if command -v rsync >/dev/null 2>&1; then
+                if sudo rsync -av ${TEMP_DIR}/ ${APP_DIR}/ 2>&1; then
+                    print_status "Method 2 (rsync) succeeded"
+                    COPY_SUCCESS=true
+                else
+                    print_warning "Method 2 (rsync) failed, trying method 3..."
+                fi
+            else
+                print_warning "rsync not available, trying method 3..."
+            fi
+            
+            # Method 3: Manual copy with tar
+            if [[ "$COPY_SUCCESS" != "true" ]]; then
+                print_status "Attempting copy method 3: tar"
+                if (cd ${TEMP_DIR} && sudo tar cf - .) | (cd ${APP_DIR} && sudo tar xf -); then
+                    print_status "Method 3 (tar) succeeded"
+                    COPY_SUCCESS=true
+                else
+                    print_error "All copy methods failed"
+                    cd - > /dev/null
+                    rm -rf ${TEMP_DIR}
+                    return 1
+                fi
+            fi
         fi
         
         cd - > /dev/null
@@ -197,13 +223,32 @@ setup_app_directory() {
         # Verify files were copied and show what's actually there
         print_status "Verifying copied files..."
         print_status "Contents of ${APP_DIR}:"
-        sudo ls -la ${APP_DIR}/
+        sudo ls -la ${APP_DIR}/ || echo "Failed to list destination directory"
         
+        # Check for critical files
         if [[ -f "${APP_DIR}/package.json" ]]; then
+            print_status "✓ package.json found"
+        else
+            print_error "✗ package.json NOT found"
+        fi
+        
+        if [[ -d "${APP_DIR}/backend" ]]; then
+            print_status "✓ backend directory found"
+        else
+            print_error "✗ backend directory NOT found"
+        fi
+        
+        if [[ -d "${APP_DIR}/frontend" ]]; then
+            print_status "✓ frontend directory found"
+        else
+            print_error "✗ frontend directory NOT found"
+        fi
+        
+        # Final check
+        if [[ -f "${APP_DIR}/package.json" && -d "${APP_DIR}/backend" && -d "${APP_DIR}/frontend" ]]; then
             print_success "Repository cloned and files copied successfully"
         else
-            print_error "package.json not found in ${APP_DIR}"
-            print_error "Files were not copied correctly"
+            print_error "Critical files/directories missing - copy failed"
             return 1
         fi
     else
