@@ -143,9 +143,26 @@ setup_app_directory() {
     sudo mkdir -p ${APP_DIR}/logs
     sudo mkdir -p ${APP_DIR}/data
     
-    # Copy application files
-    print_status "Copying application files..."
-    sudo cp -r . ${APP_DIR}/
+    # Clone the repository if we don't have the application files
+    if [[ ! -f "package.json" ]] || [[ ! -d "backend" ]] || [[ ! -d "frontend" ]]; then
+        print_status "Cloning application from repository..."
+        TEMP_DIR=$(mktemp -d)
+        if cd ${TEMP_DIR} && git clone https://github.com/djkiraly/embeddedAiAgent.git .; then
+            sudo cp -r . ${APP_DIR}/
+            cd - > /dev/null
+            rm -rf ${TEMP_DIR}
+            print_success "Repository cloned successfully"
+        else
+            print_error "Failed to clone repository"
+            rm -rf ${TEMP_DIR}
+            return 1
+        fi
+    else
+        # Copy application files from current directory
+        print_status "Copying application files..."
+        sudo cp -r . ${APP_DIR}/
+        print_success "Application files copied"
+    fi
     
     # Set ownership
     sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${APP_DIR}
