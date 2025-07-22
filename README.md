@@ -19,8 +19,8 @@ A modern, full-stack AI chat application supporting multiple LLM providers (Open
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd ai-chat-interface
+git clone https://github.com/djkiraly/embeddedAiAgent.git
+cd embeddedAiAgent
 
 # Install all dependencies
 npm run install:all
@@ -42,14 +42,14 @@ For production deployment on Linux servers, use our automated installation scrip
 #### One-Line Installation
 ```bash
 # Download and run the installation script
-curl -fsSL https://raw.githubusercontent.com/your-repo/ai-chat-interface/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/djkiraly/embeddedAiAgent/main/install.sh | bash
 ```
 
 #### Manual Installation
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/ai-chat-interface.git
-cd ai-chat-interface
+git clone https://github.com/djkiraly/embeddedAiAgent.git
+cd embeddedAiAgent
 
 # Make scripts executable
 chmod +x install.sh uninstall.sh update.sh

@@ -161,16 +161,8 @@ install_app_deps() {
     sudo -u ${SERVICE_USER} bash << EOF
         cd ${APP_DIR}
         
-        # Install root dependencies
-        npm install --production
-        
-        # Install backend dependencies
-        cd backend
-        npm install --production
-        
-        # Install frontend dependencies
-        cd ../frontend
-        npm install --production
+        # Install all dependencies using the project's convenience script
+        npm run install:all
         
         # Build frontend for production
         npm run build
@@ -439,9 +431,7 @@ case "$1" in
         echo "Updating application..."
         cd ${APP_DIR}
         sudo -u ${SERVICE_USER} git pull
-        sudo -u ${SERVICE_USER} npm install --production
-        cd backend && sudo -u ${SERVICE_USER} npm install --production
-        cd ../frontend && sudo -u ${SERVICE_USER} npm install --production
+        sudo -u ${SERVICE_USER} npm run install:all
         sudo -u ${SERVICE_USER} npm run build
         sudo systemctl restart ai-chat-backend
         sudo systemctl restart ai-chat-frontend

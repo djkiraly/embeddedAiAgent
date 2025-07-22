@@ -119,21 +119,9 @@ update_dependencies() {
     sudo -u ${SERVICE_USER} bash << 'EOF'
         cd /opt/ai-chat-interface
         
-        # Update root dependencies if package.json exists
-        if [[ -f "package.json" ]]; then
-            echo "Updating root dependencies..."
-            npm install --production
-        fi
-        
-        # Update backend dependencies
-        cd backend
-        echo "Updating backend dependencies..."
-        npm install --production
-        
-        # Update frontend dependencies and rebuild
-        cd ../frontend
-        echo "Updating frontend dependencies..."
-        npm install --production
+        # Update all dependencies using the project's convenience script
+        echo "Updating all dependencies..."
+        npm run install:all
         
         echo "Building frontend for production..."
         npm run build

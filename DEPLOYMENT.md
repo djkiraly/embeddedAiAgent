@@ -14,10 +14,10 @@ This guide covers the installation, configuration, and management of the AI Chat
 
 ```bash
 # Download and run the installation script
-curl -fsSL https://raw.githubusercontent.com/your-repo/ai-chat-interface/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/djkiraly/embeddedAiAgent/main/install.sh | bash
 
 # Or download first, then run
-wget https://raw.githubusercontent.com/your-repo/ai-chat-interface/main/install.sh
+wget https://raw.githubusercontent.com/djkiraly/embeddedAiAgent/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```
@@ -26,8 +26,8 @@ chmod +x install.sh
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/ai-chat-interface.git
-cd ai-chat-interface
+git clone https://github.com/djkiraly/embeddedAiAgent.git
+cd embeddedAiAgent
 
 # Make the script executable
 chmod +x install.sh
@@ -394,7 +394,7 @@ To completely remove the application:
 
 ```bash
 # Download and run uninstall script
-curl -fsSL https://raw.githubusercontent.com/your-repo/ai-chat-interface/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/djkiraly/embeddedAiAgent/main/uninstall.sh | bash
 
 # Or run manually
 chmod +x uninstall.sh
@@ -436,4 +436,4 @@ journalctl -u ai-chat-frontend --since "1 hour ago" --no-pager
 
 ## 📄 License
 
-This deployment guide is part of the AI Chat Interface project. See the main README.md for license information. 
+This deployment guide is part of the AI Chat Interface project. See the main README.md for license information.
