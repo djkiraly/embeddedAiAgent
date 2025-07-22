@@ -166,21 +166,49 @@ setup_app_directory() {
     # Always clone the repository to ensure we have all files
     print_status "Cloning application from repository..."
     TEMP_DIR=$(mktemp -d)
+    print_status "Using temporary directory: ${TEMP_DIR}"
+    
     if cd ${TEMP_DIR} && git clone https://github.com/djkiraly/embeddedAiAgent.git .; then
+        print_status "Repository cloned successfully to temp directory"
+        
+        # List files in temp directory for debugging
+        print_status "Files in temp directory:"
+        ls -la
+        
         print_status "Copying cloned files to ${APP_DIR}..."
-        sudo cp -r . ${APP_DIR}/
+        
+        # Use more explicit copy with error handling
+        if sudo cp -r ${TEMP_DIR}/* ${APP_DIR}/ 2>/dev/null; then
+            print_status "Files copied using cp -r ${TEMP_DIR}/* ${APP_DIR}/"
+        else
+            print_warning "Standard copy failed, trying alternative method..."
+            # Try alternative copy method
+            sudo rsync -av ${TEMP_DIR}/ ${APP_DIR}/ || {
+                print_error "Both cp and rsync failed to copy files"
+                cd - > /dev/null
+                rm -rf ${TEMP_DIR}
+                return 1
+            }
+        fi
+        
         cd - > /dev/null
         rm -rf ${TEMP_DIR}
         
-        # Verify files were copied
+        # Verify files were copied and show what's actually there
+        print_status "Verifying copied files..."
+        print_status "Contents of ${APP_DIR}:"
+        sudo ls -la ${APP_DIR}/
+        
         if [[ -f "${APP_DIR}/package.json" ]]; then
             print_success "Repository cloned and files copied successfully"
         else
+            print_error "package.json not found in ${APP_DIR}"
             print_error "Files were not copied correctly"
             return 1
         fi
     else
         print_error "Failed to clone repository"
+        cd - > /dev/null 2>/dev/null || true
         rm -rf ${TEMP_DIR}
         return 1
     fi
